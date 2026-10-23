@@ -33,7 +33,7 @@ No navegador: criação de nota, recarga com persistência, busca sem acentos, c
 
 ## Infraestrutura aguardando configuração
 
-- GitHub origem e histórico vinculados localmente; nenhum commit ou push criado nesta entrega.
+- Código-base versionado no commit 4253828 (V 1.0). As alterações do institucional desta etapa estão locais, sem commit ou push feito pelo agente.
 - URL correta confirmada pelo responsável: https://lgejykmmfybfwzqjgpqq.supabase.co. URL e chave publicável configuradas no .env local, ignorado pelo Git. Teste remoto de autenticação respondeu HTTP 200, com e-mail e cadastro habilitados. A tabela itens_pessoais respondeu HTTP 401 / 42501 ao acesso anônimo, indicando que existe e bloqueia leitura sem sessão. Ainda falta validar CRUD e funções com contas autenticadas, confirmação de e-mail e recuperação; a existência da tabela não comprova toda a migração.
 - Vercel informada, configuração de build versionada; nenhum deploy efetuado.
 - SMTP, ambientes isolados, política de retenção e monitoramento ainda não configurados.
@@ -43,3 +43,11 @@ No navegador: criação de nota, recarga com persistência, busca sem acentos, c
 O SDK 57 foi escolhido para seguir o padrão técnico recebido (React 19 e RN 0.86). A auditoria npm de instalação apresenta alertas transitivos em braces/micromatch/Metro, node-forge e decode-uri-component/query-string. `npm audit fix` sem força foi executado; alertas ainda presentes dependem de atualização upstream ou migração de SDK e devem ser reavaliados antes de produção. Não foi aplicada sugestão automática de rebaixar Expo para 44. Esses avisos não substituem a revisão de segurança antes da liberação comercial.
 
 CSP inicial permite scripts inline requeridos pela saída Expo e conexão ao Supabase. Revisar com URLs definitivas e hashes/nonces antes da produção. A política de microfone será ajustada quando gravação de áudio for implementada. Sessão do Supabase segue o mecanismo de armazenamento da plataforma; dados de conteúdo da conta não ficam na store persistida de avaliação.
+
+## Site institucional
+
+Página de apresentação criada a partir da estrutura observada em https://www.catmoneyapp.com.br/, com identidade própria da Cabenna. Fontes Manrope e Inter hospedadas localmente, logos oficiais, apresentação do produto, demonstração interativa com abas e checklists, explicação dos recursos atuais, proposta de equipes, planos previstos, FAQ e contato institucional. Não anuncia preços nem recursos futuros como liberados.
+
+Rotas: `/` é o institucional estático e `/app` é o aplicativo. `/app?conta=entrar` abre o login. O pós-build preserva o HTML Expo em `dist/app/index.html`; as rewrites da Vercel atendem as rotas do app. Os links de autenticação novos retornam para `/app`; encaminhamento de tokens/códigos na raiz preserva compatibilidade com links anteriores. Configurar URLs permitidas no Supabase com `/app`. A página tem metadados de compartilhamento, favicon, fontes locais e navegação sem depender do bundle do app; o aplicativo tem noindex.
+
+Validação: checagem de tipos, 17 testes e build; HTTP 200 para raiz, aplicativo e arquivos CSS/JS. Login aberto pelo botão do site. Demonstração de tarefas atualiza a contagem; abas e FAQ são operáveis por teclado. Conferência visual e navegação em desktop e celular. A aplicação em nuvem e o SMTP continuam sujeitos à validação de contas reais já listada acima.

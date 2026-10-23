@@ -29,7 +29,7 @@ createServer(async (req, res) => {
         res.end();
         return;
       }
-      arquivo = resolve(raiz, 'index.html');
+      arquivo = resolve(raiz, pathname.startsWith('/app/') ? 'app/index.html' : 'index.html');
     }
     const dados = await readFile(arquivo);
     res.writeHead(200, {

@@ -2,7 +2,7 @@
   "name": "Cabenna",
   "short_name": "Cabenna",
   "lang": "pt-BR",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#FAF8F3",
   "theme_color": "#092D25",

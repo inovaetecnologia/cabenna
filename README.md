@@ -2,6 +2,8 @@
 
 Aplicativo de organização pessoal e pequenas equipes da Inovae. Primeiro incremento funcional para avaliação interna: Meu dia, notas de texto, tarefas, listas, favoritos, busca, arquivo e lixeira. Os demais módulos do dossiê estão no backlog, descrito em docs/ESTADO.md.
 
+O site institucional fica em `/`. O aplicativo fica em `/app`; `/app?conta=entrar` abre o login. A página institucional segue a organização da referência Cat Money com a marca Cabenna e identifica recursos ainda planejados. Não há preços ou assinaturas à venda.
+
 ## Executar
 
 Requisitos: Node.js 24 e npm. Na pasta do projeto:
@@ -18,7 +20,9 @@ npm run build:web
 npm run preview
 ```
 
-Abra http://localhost:8081. A avaliação local fica explicitamente identificada na tela. Os exemplos podem ser editados e apagados. Os dados desse modo ficam neste navegador, não têm backup remoto e não são importados automaticamente para contas reais.
+Abra http://localhost:8081 para o site institucional ou http://localhost:8081/app para o aplicativo. O comando `npm run web` serve apenas o app pelo servidor Expo; para visualizar o site institucional, use o build e o preview descritos acima. A avaliação local fica explicitamente identificada no aplicativo. Os exemplos podem ser editados e apagados. Os dados desse modo ficam neste navegador, não têm backup remoto e não são importados automaticamente para contas reais.
+
+Os arquivos do site estão em `institucional/`, com HTML semântico, CSS responsivo e JavaScript limitado a menu, demonstração e FAQ. Logos oficiais e fontes são servidos pelo próprio domínio. `scripts/preparar-web.mjs` move a saída Expo para `/app/index.html` e coloca o site institucional na raiz do build. Não editar arquivos de `dist/`.
 
 ## Supabase
 
@@ -26,7 +30,7 @@ Projeto informado: `lgejykmmfybfwzqjgpqq`. Nenhuma migração foi aplicada remot
 
 1. No SQL Editor do projeto Cabenna, aplicar `supabase/migrations/0001_itens_pessoais.sql`.
 2. Copiar `.env.example` para `.env` e preencher a URL pública e a chave **publicável**, obtida em Settings > API Keys. Nunca usar chave secreta ou service_role.
-3. Ativar confirmação de e-mail e configurar Site URL/Redirect URLs para o endereço real da Vercel e `http://localhost:8081`. Manter somente e-mail e senha habilitados para a aplicação.
+3. Ativar confirmação de e-mail e configurar Site URL/Redirect URLs para o endereço real da Vercel **com `/app` no final** e `http://localhost:8081/app`. Manter somente e-mail e senha habilitados para a aplicação. O site preserva o encaminhamento de links de confirmação/recuperação antigos que ainda retornem à raiz com token ou código.
 4. Configurar SMTP transacional e políticas de senha/limitação de tentativas antes de avaliação com contas externas.
 5. Reiniciar Expo ou gerar outro build após alterar variáveis.
 

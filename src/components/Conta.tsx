@@ -27,7 +27,7 @@ export default function Conta({
     setMensagem('');
     setOcupado(true);
     try {
-      const redirect = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const redirect = typeof window !== 'undefined' ? window.location.origin + '/app' : undefined;
       if (modo === 'novaSenha') {
         if (senha.length < 10) throw new Error('Use pelo menos 10 caracteres.');
         const { error } = await supabase.auth.updateUser({ password: senha });

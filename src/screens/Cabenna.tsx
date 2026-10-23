@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
   View,
   ScrollView,
@@ -77,6 +78,7 @@ const titulos: Record<Pagina, string> = {
 };
 
 export default function Cabenna() {
+  const parametros = useLocalSearchParams<{ conta?: string }>();
   const { width } = useWindowDimensions();
   const mobile = width < 780;
   const loja = useAvaliacao();
@@ -86,6 +88,9 @@ export default function Cabenna() {
   const [menu, setMenu] = useState(false);
   const [editor, setEditor] = useState<{ item: Item | null; tipo: Tipo } | null>(null);
   const [conta, setConta] = useState(false);
+  useEffect(() => {
+    if (parametros.conta === 'entrar') setConta(true);
+  }, [parametros.conta]);
   const [recuperacao, setRecuperacao] = useState(false);
   const [sessao, setSessao] = useState<Session | null>(null);
   const [nuvem, setNuvem] = useState<Item[]>([]);

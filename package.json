@@ -1,6 +1,6 @@
 {
   "name": "cabenna",
-  "description": "OrganizaÃƒÂ§ÃƒÂ£o pessoal e de pequenas equipes da Inovae",
+  "description": "Organização pessoal e de pequenas equipes da Inovae",
   "license": "UNLICENSED",
   "version": "0.1.0",
   "main": "expo-router/entry",
@@ -45,7 +45,7 @@
     "build:web": "expo export --platform web && node scripts/preparar-web.mjs",
     "check": "npm run typecheck && npm test && npm run build:web",
     "preview": "node scripts/preview.mjs",
-    "format": "prettier --write src app scripts tests docs *.json *.md .github/workflows/*.yml"
+    "format": "prettier --write src app scripts tests docs institucional *.json *.md .github/workflows/*.yml"
   },
   "private": true
 }

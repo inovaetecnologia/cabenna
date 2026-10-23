@@ -5,6 +5,7 @@ Leia README.md e docs/ESTADO.md antes de modificar. O dossiê de produto da Inov
 - Expo SDK 57, React Native Web, TypeScript estrito e Zustand. Nomes de negócio em português.
 - Use os arquivos oficiais em Cabenna_Artes_Identidade_Visual. Paleta em src/theme/cores.ts. Manrope para títulos e Inter para textos.
 - Componentes usam Texto de src/components/ui.tsx. Regra pura em src/lib com testes.
+- O institucional está em institucional/ (HTML/CSS/JS semântico). A raiz `/` é o site; `/app` é o aplicativo Expo. O build monta os dois. Preservar login e callbacks, incluindo URLs antigas na raiz. Não anunciar funcionalidades planejadas como disponíveis ou publicar preços ainda hipotéticos.
 - Variáveis Expo públicas são lidas literalmente em src/data/config.ts. Somente chave publicável no cliente. Nunca registrar credenciais ou conteúdo pessoal.
 - Migrações SQL são acrescentadas. Não modificar migração aplicada a ambiente externo.
 - Banco decide acesso. Toda tabela nova precisa de RLS e grants explícitos. Testar isolamento em PostgreSQL/PGlite.
