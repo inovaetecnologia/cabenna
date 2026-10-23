@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 const raiz = resolve('dist');
+const porta = Number(process.env.CABENNA_PREVIEW_PORT ?? 8081);
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript',
@@ -41,4 +42,4 @@ createServer(async (req, res) => {
     res.writeHead(404);
     res.end();
   }
-}).listen(8081, '0.0.0.0', () => console.log('Cabenna em http://localhost:8081'));
+}).listen(porta, '0.0.0.0', () => console.log('Cabenna em http://localhost:' + porta));

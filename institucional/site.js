@@ -1,75 +1,60 @@
-// Compatibilidade com links de confirmação antigos que ainda retornem à raiz.
-const hash = new URLSearchParams(window.location.hash.slice(1));
-const query = new URLSearchParams(window.location.search);
-if (hash.has('access_token') || query.has('code') || hash.has('error_description')) {
-  window.location.replace('/app' + window.location.search + window.location.hash);
-}
-
-const menuButton = document.querySelector('#menu-button');
-const mobileNav = document.querySelector('#mobile-nav');
+const hash = new URLSearchParams(location.hash.slice(1));
+const query = new URLSearchParams(location.search);
+if (hash.has('access_token') || query.has('code') || hash.has('error_description'))
+  location.replace('/app' + location.search + location.hash);
+const menu = document.getElementById('menu-button');
+const nav = document.getElementById('mobile-nav');
 function fecharMenu() {
-  mobileNav.hidden = true;
-  menuButton.setAttribute('aria-expanded', 'false');
-  menuButton.setAttribute('aria-label', 'Abrir menu');
+  nav.hidden = true;
+  menu.setAttribute('aria-expanded', 'false');
+  menu.setAttribute('aria-label', 'Abrir menu');
 }
-menuButton.addEventListener('click', () => {
-  const abrir = mobileNav.hidden;
-  mobileNav.hidden = !abrir;
-  menuButton.setAttribute('aria-expanded', String(abrir));
-  menuButton.setAttribute('aria-label', abrir ? 'Fechar menu' : 'Abrir menu');
+menu.addEventListener('click', () => {
+  const abrir = nav.hidden;
+  nav.hidden = !abrir;
+  menu.setAttribute('aria-expanded', String(abrir));
+  menu.setAttribute('aria-label', abrir ? 'Fechar menu' : 'Abrir menu');
 });
-mobileNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', fecharMenu));
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !mobileNav.hidden) {
+nav.querySelectorAll('a').forEach((a) => a.addEventListener('click', fecharMenu));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !nav.hidden) {
     fecharMenu();
-    menuButton.focus();
+    menu.focus();
   }
 });
-window.matchMedia('(min-width: 851px)').addEventListener('change', (event) => {
-  if (event.matches) fecharMenu();
-});
-
-const tabs = [...document.querySelectorAll('[data-demo]')];
-function selecionarTab(tab) {
-  tabs.forEach((atual) => {
-    const selecionado = atual === tab;
-    atual.setAttribute('aria-selected', String(selecionado));
-    atual.tabIndex = selecionado ? 0 : -1;
-    document.getElementById(atual.getAttribute('aria-controls')).hidden = !selecionado;
+const tabs = [...document.querySelectorAll('[data-journey]')];
+function selecionar(tab) {
+  tabs.forEach((t) => {
+    const ativo = t === tab;
+    t.setAttribute('aria-selected', String(ativo));
+    t.tabIndex = ativo ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !ativo;
   });
 }
-tabs.forEach((tab, indice) => {
-  tab.addEventListener('click', () => selecionarTab(tab));
-  tab.addEventListener('keydown', (event) => {
-    let proximo;
-    if (event.key === 'ArrowRight') proximo = tabs[(indice + 1) % tabs.length];
-    if (event.key === 'ArrowLeft') proximo = tabs[(indice + tabs.length - 1) % tabs.length];
-    if (event.key === 'Home') proximo = tabs[0];
-    if (event.key === 'End') proximo = tabs[tabs.length - 1];
-    if (proximo) {
-      event.preventDefault();
-      selecionarTab(proximo);
-      proximo.focus();
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => selecionar(t));
+  t.addEventListener('keydown', (e) => {
+    let n;
+    if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+    if (e.key === 'ArrowLeft') n = (i + tabs.length - 1) % tabs.length;
+    if (e.key === 'Home') n = 0;
+    if (e.key === 'End') n = tabs.length - 1;
+    if (n !== undefined) {
+      e.preventDefault();
+      selecionar(tabs[n]);
+      tabs[n].focus();
     }
   });
 });
 const tarefas = [...document.querySelectorAll('[data-task]')];
-tarefas.forEach((checkbox) =>
-  checkbox.addEventListener('change', () => {
-    const concluidas = tarefas.filter((tarefa) => tarefa.checked).length;
-    document.getElementById('demo-pending').textContent = String(
-      tarefas.length - concluidas,
-    ).padStart(2, '0');
+tarefas.forEach((t) =>
+  t.addEventListener('change', () => {
+    const n = tarefas.filter((t) => t.checked).length;
     document.getElementById('demo-progress').textContent =
-      concluidas === 0
-        ? 'Seu dia começa com um pequeno passo.'
-        : concluidas === tarefas.length
-          ? 'Um passo de cada vez. Você concluiu os três!'
-          : `${concluidas} de ${tarefas.length} passos concluídos. No seu ritmo.`;
-  }),
-);
-document.querySelectorAll('a[href="#faq-equipes"]').forEach((link) =>
-  link.addEventListener('click', () => {
-    document.getElementById('faq-equipes').open = true;
+      n === 0
+        ? 'Seu ritmo também importa.'
+        : n === tarefas.length
+          ? 'Você deu espaço ao que importa.'
+          : 'Um passo dado. O próximo vem no seu tempo.';
   }),
 );

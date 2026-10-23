@@ -23,6 +23,8 @@ export type Espaco = {
   usuario_id: string | null;
 };
 export type Plano = {
+  master?: boolean;
+  licenca_permanente?: boolean;
   codigo: 'gratuito' | 'pro' | 'equipes';
   nome: string;
   estado: 'gratuito' | 'teste' | 'ativo' | 'consulta';

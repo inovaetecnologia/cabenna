@@ -73,6 +73,7 @@ export function Escolha<T extends string>({
             accessibilityRole="button"
             accessibilityLabel={label + ': ' + o.nome}
             accessibilityState={{ selected: valor === o.valor }}
+            aria-pressed={valor === o.valor}
             onPress={() => mudar(o.valor)}
             style={{
               minHeight: 44,

@@ -4,6 +4,10 @@ Aplicativo da Inovae para conectar notas, documentos, tarefas, listas, agenda e 
 
 Free inclui documentos com formatação e modelos, espaços, etiquetas, Meu Dia individual, tarefas recorrentes, agenda interna e histórico de sete dias. Pro tem teste pessoal de 14 dias e histórico ampliado. Equipes tem teste de 14 dias, até 15 participantes, papéis e permissões por espaço. Cobrança paga não está integrada. Veja [estado de desenvolvimento](docs/ESTADO.md), [estudo de produto](docs/ESTUDO_PRODUTO.md) e [atualização do banco](docs/ATUALIZACAO.md).
 
+## Revisão da experiência
+
+Hoje, Calendário e Meu espaço passam a concentrar o uso diário. A criação de planos conectados e a licença Master dependem da nova migração 0006. O responsável confirmou que 0002–0005 já foram executadas. Leia docs/ATUALIZACAO_0006.md antes de publicar. Não repita migrações já aplicadas. A pesquisa de dores e as decisões estão em docs/PESQUISA_DORES.md.
+
 ## Executar
 
 Requisitos: Node.js 24 e npm. Na pasta do projeto:

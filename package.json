@@ -38,6 +38,7 @@
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.2.0",
+    "esbuild": "^0.28.2",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5"

@@ -1,3 +1,21 @@
+# Revisão de experiência — 23 de outubro de 2026
+
+Esta revisão reorganiza o aplicativo em Hoje, Calendário e Meu espaço. A navegação anterior por 12 módulos foi substituída por agrupamentos de intenção. Notas e documentos ficam em Anotações; tarefas e listas ficam juntas, com quadro opcional; planos vinculam resultado desejado, tarefas e referências. As tarefas continuam as mesmas em Hoje e no calendário. Planos, gestão, exportação e tema ficam nas preferências.
+
+Calendário agora tem eixo de horas, duração, sobreposições em colunas, faixa de prazo/dia inteiro, minicalendário e controles escritos Dia/Semana/Mês. Criar num horário preenche a data correspondente. Editor com opções progressivas; objetivo começa com nome e resultado, e planejamento detalhado é opcional. O site recebeu nova composição editorial, ilustrações CSS/SVG e demonstração interativa do percurso de uso.
+
+**Banco:** o responsável confirmou a execução de 0002 a 0005. A nova migração 0006 e a ativação Master ainda NÃO foram executadas remotamente pelo agente. Leia ATUALIZACAO_0006.md antes do próximo push. Nenhuma migração aplicada anteriormente foi modificada. O cliente detecta ausência da 0006 e bloqueia a criação de planos conectados, mantendo as funções anteriores utilizáveis.
+
+**Master:** privilégio por UUID, concedido somente pelo administrador do banco após localizar e-mail confirmado. Licença permanente com maior capacidade configurada no catálogo, estendida às equipes de propriedade do Master. Nenhum bypass de privacidade ou RLS foi criado. Resumo administrativo agregado, sem conteúdos privados. O arquivo específico da conta está nos outputs da conversa; o repositório contém apenas modelo administrativo com placeholder.
+
+**Validação:** 56 testes aprovados na última execução local, incluindo novos casos de duração, sobreposição, Master, licença e vínculo entre plano/tarefa. Interface real conferida com dados fictícios em memória em ambiente isolado na porta 8090, fora das rotas/build de produção; temas e 390 px conferidos. SQL hospedado, licença da conta real e fluxo autenticado ainda precisam da homologação após 0006. A revisão não fez commit, push ou deploy.
+
+Pesquisa exploratória com limitações e decisões: PESQUISA_DORES.md. Cofre, anexos, cobrança paga, notificações e offline persistente continuam pendentes. Não há edição simultânea de documentos; conflitos continuam controlados por versão.
+
+---
+
+## Registro da entrega anterior
+
 # Estado do desenvolvimento
 
 23 de outubro de 2026. Escopo: web responsiva/PWA. Base: dossiê Cabenna v1 e referências oficiais de produto documentadas em ESTUDO_PRODUTO.md.

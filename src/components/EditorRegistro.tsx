@@ -26,8 +26,10 @@ import { Texto, Botao, IconeBotao } from './ui';
 import { Campo, Escolha, Janela } from './formulario';
 import DocumentoEditor from './DocumentoEditor';
 import CampoData from './CampoData';
+import { InicioRegistro } from './Experiencia';
 
 type Props = {
+  inicio?: InicioRegistro;
   id: string;
   item: Item | null;
   tipo: Tipo;
@@ -41,6 +43,7 @@ type Props = {
 };
 export default function EditorRegistro({
   id,
+  inicio: inicial,
   item,
   tipo,
   espacoInicial,
@@ -51,6 +54,26 @@ export default function EditorRegistro({
   fechar,
   salvar,
 }: Props) {
+  const diaInicial = inicial?.dia ?? dataLocal();
+  const horaInicial = inicial?.hora ?? '09:00';
+  const fimBase = new Date(diaInicial + 'T' + horaInicial);
+  fimBase.setHours(fimBase.getHours() + 1);
+  const fimInicial =
+    dataLocal(fimBase) +
+    'T' +
+    String(fimBase.getHours()).padStart(2, '0') +
+    ':' +
+    String(fimBase.getMinutes()).padStart(2, '0');
+  const ehObjetivo = !!item?.dados?.objetivo || !!inicial?.objetivo;
+  const [resultado, setResultado] = useState(item?.dados?.objetivo?.resultado ?? '');
+  const [dataAlvo, setDataAlvo] = useState(item?.dados?.objetivo?.data_alvo ?? '');
+  const [situacaoObjetivo, setSituacaoObjetivo] = useState(
+    item?.dados?.objetivo?.situacao ?? 'ativo',
+  );
+  const [maisDetalhes, setMaisDetalhes] = useState(false);
+  const [mostrarDocumento, setMostrarDocumento] = useState(!ehObjetivo || !!item?.texto?.trim());
+  const [mostrarModelos, setMostrarModelos] = useState(false);
+  const [mostrarPassos, setMostrarPassos] = useState(!!item?.checklist.length);
   const [atual, setAtual] = useState<Tipo>(item?.tipo ?? tipo);
   const [titulo, setTitulo] = useState(item?.titulo ?? '');
   const [texto, setTexto] = useState(item?.texto ?? '');
@@ -69,23 +92,23 @@ export default function EditorRegistro({
   );
   const [fuso, setFuso] = useState(item?.dados?.fuso ?? fusoDoDispositivo());
   const [inicio, setInicio] = useState(
-    item?.dados?.inicio ? horarioLocal(item.dados.inicio, fuso) : dataLocal() + 'T09:00',
+    item?.dados?.inicio ? horarioLocal(item.dados.inicio, fuso) : diaInicial + 'T' + horaInicial,
   );
   const [fim, setFim] = useState(
-    item?.dados?.fim ? horarioLocal(item.dados.fim, fuso) : dataLocal() + 'T10:00',
+    item?.dados?.fim ? horarioLocal(item.dados.fim, fuso) : fimInicial,
   );
   const [diaInteiro, setDiaInteiro] = useState(item?.dados?.dia_inteiro ?? false);
-  const [dataInicio, setDataInicio] = useState(item?.dados?.data_inicio ?? dataLocal());
-  const [dataFim, setDataFim] = useState(item?.dados?.data_fim ?? dataLocal());
+  const [dataInicio, setDataInicio] = useState(item?.dados?.data_inicio ?? diaInicial);
+  const [dataFim, setDataFim] = useState(item?.dados?.data_fim ?? diaInicial);
   const [local, setLocal] = useState(item?.dados?.local ?? '');
   const [reservar, setReservar] = useState(!!item?.dados?.bloco_inicio);
   const [blocoInicio, setBlocoInicio] = useState(
     item?.dados?.bloco_inicio
       ? horarioLocal(item.dados.bloco_inicio, fuso)
-      : dataLocal() + 'T09:00',
+      : diaInicial + 'T' + horaInicial,
   );
   const [blocoFim, setBlocoFim] = useState(
-    item?.dados?.bloco_fim ? horarioLocal(item.dados.bloco_fim, fuso) : dataLocal() + 'T10:00',
+    item?.dados?.bloco_fim ? horarioLocal(item.dados.bloco_fim, fuso) : fimInicial,
   );
   const [documento, setDocumento] = useState<DocumentoJSON | null>(
     item?.dados?.documento ??
@@ -108,6 +131,9 @@ export default function EditorRegistro({
   const salvandoRef = useRef(false);
   const montado = useRef(true);
   const assinatura = JSON.stringify({
+    resultado,
+    dataAlvo,
+    situacaoObjetivo,
     atual,
     titulo,
     texto,
@@ -135,11 +161,23 @@ export default function EditorRegistro({
   });
   const ultimoSalvo = useRef(item ? assinatura : '');
   const [revisao, setRevisao] = useState(0);
-  const temAlteracao = assinatura !== ultimoSalvo.current;
+  const temAlteracao =
+    assinatura !== ultimoSalvo.current &&
+    Boolean(item || titulo.trim() || texto.trim() || checklist.length || resultado.trim());
   const assinaturaAtual = useRef(assinatura);
   assinaturaAtual.current = assinatura;
   const obterEntrada = (): Entrada => {
     const d: DadosItem = {
+      objetivo_id: item?.dados?.objetivo_id ?? inicial?.objetivo_id ?? null,
+      ...(ehObjetivo
+        ? {
+            objetivo: {
+              resultado: resultado.trim(),
+              data_alvo: dataAlvo || null,
+              situacao: situacaoObjetivo,
+            },
+          }
+        : {}),
       prioridade: Number(prioridade),
       etiquetas: [
         ...new Set(etiquetas.split(',').map((t) => t.trim().replace(/^#/, ''))).values(),
@@ -149,6 +187,8 @@ export default function EditorRegistro({
       responsavel_id: responsavel || null,
       recorrencia: atual === 'tarefa' ? recorrencia : 'nenhuma',
     };
+    if (ehObjetivo && !resultado.trim())
+      throw new Error('Conte o resultado que você quer alcançar com este plano.');
     if (atual === 'documento')
       d.documento = documento ?? { type: 'doc', content: [{ type: 'paragraph' }] };
     if (atual === 'evento') {
@@ -235,7 +275,15 @@ export default function EditorRegistro({
     if (assinatura !== ultimoSalvo.current) setSituacao('Alterações a salvar');
   }, [assinatura]);
   useEffect(() => {
-    if (!temAlteracao || !titulo.trim() || salvando || erro || novaLinha.trim()) return;
+    if (
+      !temAlteracao ||
+      !titulo.trim() ||
+      salvando ||
+      erro ||
+      novaLinha.trim() ||
+      (ehObjetivo && !resultado.trim())
+    )
+      return;
     const timer = setTimeout(() => {
       void gravar();
     }, 1400);
@@ -277,7 +325,15 @@ export default function EditorRegistro({
   };
   return (
     <Janela
-      titulo={item ? 'Seu registro' : 'O que vamos guardar?'}
+      titulo={
+        ehObjetivo
+          ? 'Dê forma ao seu plano'
+          : atual === 'evento'
+            ? 'Um tempo para o que importa'
+            : item
+              ? 'Continue de onde parou'
+              : 'Tire da cabeça. Guarde aqui.'
+      }
       subtitulo={contexto.toLocaleUpperCase('pt-BR')}
       cores={cores}
       fechar={fecharSeguro}
@@ -307,19 +363,28 @@ export default function EditorRegistro({
         </View>
       }
     >
-      <Escolha
-        label="Tipo de registro"
-        cores={cores}
-        valor={atual}
-        mudar={setAtual}
-        opcoes={[
-          { valor: 'nota', nome: 'Nota' },
-          { valor: 'documento', nome: 'Documento' },
-          { valor: 'tarefa', nome: 'Tarefa' },
-          { valor: 'lista', nome: 'Lista' },
-          { valor: 'evento', nome: 'Evento' },
-        ]}
-      />
+      {maisDetalhes && !ehObjetivo && (
+        <>
+          <Escolha
+            label="Tipo de registro"
+            cores={cores}
+            valor={atual}
+            mudar={setAtual}
+            opcoes={[
+              { valor: 'nota', nome: 'Nota' },
+              { valor: 'documento', nome: 'Documento' },
+              { valor: 'tarefa', nome: 'Tarefa' },
+              { valor: 'lista', nome: 'Lista' },
+              { valor: 'evento', nome: 'Evento' },
+            ]}
+          />
+        </>
+      )}
+      {inicial?.objetivo_nome && (
+        <Texto style={{ fontSize: 11, color: cores.secundario }}>
+          Faz parte do plano: {inicial.objetivo_nome}
+        </Texto>
+      )}
       <Campo
         label="Título"
         valor={titulo}
@@ -327,9 +392,53 @@ export default function EditorRegistro({
         cores={cores}
         placeholder="Dê um nome à sua ideia"
       />
-      {atual === 'documento' ? (
+      {ehObjetivo && (
+        <>
+          <Campo
+            label="O que você quer alcançar?"
+            valor={resultado}
+            mudar={setResultado}
+            cores={cores}
+            multiline
+            maxLength={2000}
+            placeholder="Descreva o resultado que vai fazer este plano valer a pena."
+          />
+          <CampoData
+            label="Quando você gostaria de chegar lá? · opcional"
+            valor={dataAlvo}
+            mudar={setDataAlvo}
+            cores={cores}
+          />
+          {maisDetalhes && (
+            <Escolha
+              label="Momento do plano"
+              valor={situacaoObjetivo}
+              mudar={setSituacaoObjetivo}
+              cores={cores}
+              opcoes={[
+                { valor: 'ativo', nome: 'Em movimento' },
+                { valor: 'pausado', nome: 'Em pausa' },
+                { valor: 'concluido', nome: 'Realizado' },
+              ]}
+            />
+          )}
+          <Texto style={{ fontSize: 12, color: cores.secundario }}>
+            As tarefas e referências ficam conectadas a este plano em Meu espaço.
+          </Texto>
+        </>
+      )}
+      {atual === 'documento' && !mostrarDocumento ? (
+        <Botao cores={cores} secundario onPress={() => setMostrarDocumento(true)}>
+          Adicionar detalhes ao planejamento
+        </Botao>
+      ) : atual === 'documento' ? (
         <>
           {!item && (
+            <Botao cores={cores} secundario onPress={() => setMostrarModelos(!mostrarModelos)}>
+              {mostrarModelos ? 'Fechar modelos' : 'Começar com um modelo'}
+            </Botao>
+          )}
+          {!item && mostrarModelos && (
             <Escolha
               label="Começar com um modelo"
               cores={cores}
@@ -365,7 +474,7 @@ export default function EditorRegistro({
             cores={cores}
           />
         </>
-      ) : (
+      ) : atual === 'nota' || !!texto || maisDetalhes ? (
         <Campo
           label={atual === 'nota' ? 'Sua ideia' : 'Observações'}
           valor={texto}
@@ -375,8 +484,13 @@ export default function EditorRegistro({
           maxLength={50000}
           placeholder="Comece a escrever. Organize depois."
         />
+      ) : null}
+      {atual === 'tarefa' && !mostrarPassos && (
+        <Botao cores={cores} secundario onPress={() => setMostrarPassos(true)}>
+          Dividir em passos menores
+        </Botao>
       )}
-      {(atual === 'lista' || atual === 'tarefa') && (
+      {(atual === 'lista' || (atual === 'tarefa' && mostrarPassos)) && (
         <View style={{ gap: 7 }}>
           <Texto titulo style={{ color: cores.texto, fontSize: 15 }}>
             {atual === 'tarefa' ? 'Passos da tarefa' : 'Itens da lista'}
@@ -387,6 +501,7 @@ export default function EditorRegistro({
                 accessibilityRole="checkbox"
                 accessibilityLabel={l.texto}
                 accessibilityState={{ checked: l.feita }}
+                aria-checked={l.feita}
                 onPress={() =>
                   setChecklist(
                     checklist.map((a) => (a.id === l.id ? { ...a, feita: !a.feita } : a)),
@@ -460,40 +575,44 @@ export default function EditorRegistro({
       {atual === 'tarefa' && (
         <>
           <CampoData label="Prazo" valor={prazo} mudar={setPrazo} cores={cores} />
-          <Escolha
-            label="Estado"
-            cores={cores}
-            valor={estado}
-            mudar={setEstado}
-            opcoes={(['A fazer', 'Em andamento', 'Aguardando', 'Concluída'] as Estado[]).map(
-              (e) => ({ valor: e, nome: e }),
-            )}
-          />
-          <Escolha
-            label="Prioridade"
-            cores={cores}
-            valor={prioridade}
-            mudar={setPrioridade}
-            opcoes={[
-              { valor: '0', nome: 'Normal' },
-              { valor: '1', nome: 'Baixa' },
-              { valor: '2', nome: 'Média' },
-              { valor: '3', nome: 'Alta' },
-            ]}
-          />
-          <Escolha
-            label="Repetição · uma próxima ocorrência é criada ao concluir"
-            cores={cores}
-            valor={recorrencia ?? 'nenhuma'}
-            mudar={setRecorrencia}
-            opcoes={[
-              { valor: 'nenhuma', nome: 'Não repetir' },
-              { valor: 'diaria', nome: 'Diária' },
-              { valor: 'semanal', nome: 'Semanal' },
-              { valor: 'mensal', nome: 'Mensal' },
-              { valor: 'apos_concluir', nome: 'Um dia após concluir' },
-            ]}
-          />
+          {maisDetalhes && (
+            <>
+              <Escolha
+                label="Estado"
+                cores={cores}
+                valor={estado}
+                mudar={setEstado}
+                opcoes={(['A fazer', 'Em andamento', 'Aguardando', 'Concluída'] as Estado[]).map(
+                  (e) => ({ valor: e, nome: e }),
+                )}
+              />
+              <Escolha
+                label="Prioridade"
+                cores={cores}
+                valor={prioridade}
+                mudar={setPrioridade}
+                opcoes={[
+                  { valor: '0', nome: 'Normal' },
+                  { valor: '1', nome: 'Baixa' },
+                  { valor: '2', nome: 'Média' },
+                  { valor: '3', nome: 'Alta' },
+                ]}
+              />
+              <Escolha
+                label="Repetição · uma próxima ocorrência é criada ao concluir"
+                cores={cores}
+                valor={recorrencia ?? 'nenhuma'}
+                mudar={setRecorrencia}
+                opcoes={[
+                  { valor: 'nenhuma', nome: 'Não repetir' },
+                  { valor: 'diaria', nome: 'Diária' },
+                  { valor: 'semanal', nome: 'Semanal' },
+                  { valor: 'mensal', nome: 'Mensal' },
+                  { valor: 'apos_concluir', nome: 'Um dia após concluir' },
+                ]}
+              />
+            </>
+          )}
           <Escolha
             label="Meu dia · não muda o prazo"
             cores={cores}
@@ -581,56 +700,75 @@ export default function EditorRegistro({
         </>
       )}
       {(atual === 'evento' || reservar || recorrencia !== 'nenhuma') && (
-        <Campo
-          label="Fuso do horário · exemplo America/Sao_Paulo"
-          valor={fuso}
-          mudar={setFuso}
-          cores={cores}
-        />
+        <Texto style={{ fontSize: 11, color: cores.secundario }}>
+          Horários de {fuso.split('/').pop()?.replace(/_/g, ' ')}. O fuso pode ser alterado nos
+          detalhes.
+        </Texto>
       )}
-      <Escolha
-        label="Espaço de destino"
-        cores={cores}
-        valor={espaco}
-        mudar={setEspaco}
-        opcoes={[
-          { valor: '', nome: 'Sem espaço' },
-          ...espacos.map((e) => ({
-            valor: e.id,
-            nome: e.nome + (e.restrito ? ' · restrito' : ''),
-          })),
-        ]}
-      />
-      {!!participantes.length && (
-        <Escolha
-          label="Responsável principal"
-          cores={cores}
-          valor={responsavel}
-          mudar={setResponsavel}
-          opcoes={[
-            { valor: '', nome: 'Não atribuído' },
-            ...participantes.map((p) => ({ valor: p.usuario_id, nome: p.email })),
-          ]}
-        />
+      {maisDetalhes && (atual === 'evento' || reservar || recorrencia !== 'nenhuma') && (
+        <Campo label="Fuso horário" valor={fuso} mudar={setFuso} cores={cores} />
       )}
-      <Campo
-        label="Etiquetas · separadas por vírgula"
-        valor={etiquetas}
-        mudar={setEtiquetas}
-        cores={cores}
-        maxLength={820}
-        placeholder="trabalho, casa, ideias"
-      />
       <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: favorito }}
-        accessibilityLabel="Favorito"
-        onPress={() => setFavorito(!favorito)}
-        style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9 }}
+        accessibilityRole="button"
+        onPress={() => setMaisDetalhes(!maisDetalhes)}
+        style={{ minHeight: 48, paddingVertical: 12, borderTopWidth: 1, borderColor: cores.borda }}
       >
-        <Star size={19} color={cores.destaque} fill={favorito ? cores.destaque : 'transparent'} />
-        <Texto style={{ color: cores.texto }}>Manter nos favoritos</Texto>
+        <Texto style={{ color: cores.destaque, fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>
+          {maisDetalhes ? '− Menos opções' : '+ Organizar e ajustar detalhes'}
+        </Texto>
       </Pressable>
+      {maisDetalhes && (
+        <>
+          <Escolha
+            label="Espaço de destino"
+            cores={cores}
+            valor={espaco}
+            mudar={setEspaco}
+            opcoes={[
+              { valor: '', nome: 'Sem espaço' },
+              ...espacos.map((e) => ({
+                valor: e.id,
+                nome: e.nome + (e.restrito ? ' · restrito' : ''),
+              })),
+            ]}
+          />
+          {!!participantes.length && (
+            <Escolha
+              label="Responsável principal"
+              cores={cores}
+              valor={responsavel}
+              mudar={setResponsavel}
+              opcoes={[
+                { valor: '', nome: 'Não atribuído' },
+                ...participantes.map((p) => ({ valor: p.usuario_id, nome: p.email })),
+              ]}
+            />
+          )}
+          <Campo
+            label="Etiquetas · separadas por vírgula"
+            valor={etiquetas}
+            mudar={setEtiquetas}
+            cores={cores}
+            maxLength={820}
+            placeholder="trabalho, casa, ideias"
+          />
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: favorito }}
+            aria-checked={favorito}
+            accessibilityLabel="Favorito"
+            onPress={() => setFavorito(!favorito)}
+            style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9 }}
+          >
+            <Star
+              size={19}
+              color={cores.destaque}
+              fill={favorito ? cores.destaque : 'transparent'}
+            />
+            <Texto style={{ color: cores.texto }}>Manter nos favoritos</Texto>
+          </Pressable>
+        </>
+      )}
       {!!erro && (
         <Texto accessibilityRole="alert" style={{ color: cores.erro }}>
           {erro}

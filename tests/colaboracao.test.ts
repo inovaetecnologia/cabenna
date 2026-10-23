@@ -52,6 +52,7 @@ beforeAll(async () => {
     '0003_registros_historico_agenda.sql',
     '0004_exportacao_e_atribuicoes.sql',
     '0005_foco_pessoal.sql',
+    '0006_master_e_planos_conectados.sql',
   ])
     await db.exec(
       readFileSync(new URL('../supabase/migrations/' + arquivo, import.meta.url), 'utf8'),
@@ -334,5 +335,125 @@ describe('organização pessoal e colaboração protegida', () => {
     );
     const r = await como(1, () => rpc<any[]>('cabenna_exportar_contexto', [equipe]));
     expect(r.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Master e planos conectados', () => {
+  it('uma conta comum não pode promover a si mesma', async () => {
+    await expect(
+      como(20, () =>
+        db.query('insert into public.administradores_produto(usuario_id) values($1)', [uid(20)]),
+      ),
+    ).rejects.toThrow('permission denied');
+    await expect(como(20, () => rpc('cabenna_resumo_master'))).rejects.toThrow('SEM_PERMISSAO');
+  });
+  it('licença Master usa a maior capacidade, permanentemente, sem abrir privados', async () => {
+    await db.exec(
+      readFileSync(new URL('../supabase/admin/ativar_master.sql', import.meta.url), 'utf8').replace(
+        'PREENCHA_EMAIL',
+        'pessoa20@teste.invalid',
+      ),
+    );
+    const p = await como(20, () => rpc<any>('cabenna_plano'));
+    expect(p.master).toBe(true);
+    expect(p.licenca_permanente).toBe(true);
+    expect(p.estado).toBe('ativo');
+    expect(p.teste_fim).toBeNull();
+    const limite = await db.query<any>(
+      'select max(armazenamento_bytes) as maximo from public.catalogo_planos',
+    );
+    expect(Number(p.armazenamento_bytes)).toBe(Number(limite.rows[0].maximo));
+    const privados = await como(20, () => db.query('select * from public.registros'));
+    expect(privados.rows).toHaveLength(0);
+  });
+  it('equipes de um proprietário Master permanecem ativas após o teste, mantendo autorização', async () => {
+    const e = await como(20, () => rpc<string>('cabenna_criar_equipe', ['Equipe Master']));
+    await db.query(
+      "update public.equipes set teste_inicio=now()-interval '60 days',teste_fim=now()-interval '46 days' where id=$1",
+      [e],
+    );
+    const p = await como(20, () => rpc<any>('cabenna_plano', [e]));
+    expect(p.estado).toBe('ativo');
+    await como(20, () => salvar(rid(30), entrada, 0, e));
+    await expect(como(21, () => salvar(rid(31), entrada, 0, e))).rejects.toThrow();
+  });
+  it('plano conecta tarefas com versões e mantém o escopo de acesso', async () => {
+    await como(21, () =>
+      salvar(rid(40), {
+        ...entrada,
+        tipo: 'documento',
+        titulo: 'Meu objetivo',
+        dados: {
+          objetivo: { resultado: 'Terminar um curso', data_alvo: '2027-05-10', situacao: 'ativo' },
+        },
+      }),
+    );
+    const t = await como(21, () =>
+      salvar(rid(41), { ...entrada, tipo: 'tarefa', dados: { objetivo_id: rid(40) } }),
+    );
+    expect(t.dados.objetivo_id).toBe(rid(40));
+    await expect(
+      como(22, () =>
+        salvar(rid(42), { ...entrada, tipo: 'tarefa', dados: { objetivo_id: rid(40) } }),
+      ),
+    ).rejects.toThrow('OBJETIVO_INDISPONIVEL');
+    await como(21, () =>
+      salvar(
+        rid(40),
+        {
+          ...entrada,
+          tipo: 'documento',
+          dados: {
+            objetivo: { resultado: 'Terminar dois cursos', data_alvo: null, situacao: 'ativo' },
+          },
+        },
+        1,
+      ),
+    );
+    const h = await como(21, () =>
+      db.query<any>(
+        'select conteudo from public.versoes_registro where registro_id=$1 and versao=2',
+        [rid(40)],
+      ),
+    );
+    expect(h.rows[0].conteudo.dados.objetivo.resultado).toBe('Terminar dois cursos');
+  });
+  it('vínculo não atravessa espaços com audiências diferentes', async () => {
+    const esp = await como(21, () =>
+      rpc<string>('cabenna_criar_espaco', ['Outro cantinho', '#8AA175', null, false]),
+    );
+    await expect(
+      como(21, () =>
+        salvar(rid(43), {
+          ...entrada,
+          tipo: 'tarefa',
+          espaco_id: esp,
+          dados: { objetivo_id: rid(40) },
+        }),
+      ),
+    ).rejects.toThrow('OBJETIVO_ESPACO_DIFERENTE');
+  });
+  it('recorrência preserva o vínculo correto ao próximo passo', async () => {
+    const d = {
+      ...entrada,
+      tipo: 'tarefa',
+      prazo: '2027-01-10',
+      dados: { objetivo_id: rid(40), recorrencia: 'diaria' },
+    };
+    await como(21, () => salvar(rid(44), d));
+    const r = await como(21, () => salvar(rid(44), { ...d, estado: 'Concluída' }, 1));
+    const seguinte = await como(21, () =>
+      db.query<any>('select dados from public.registros where id=$1', [r.dados.proxima_ocorrencia]),
+    );
+    expect(seguinte.rows[0].dados.objetivo_id).toBe(rid(40));
+  });
+  it('revogação administrativa da licença devolve o benefício normal', async () => {
+    await db.query('update public.administradores_produto set ativo=false where usuario_id=$1', [
+      uid(20),
+    ]);
+    const p = await como(20, () => rpc<any>('cabenna_plano'));
+    expect(p.master).toBe(false);
+    expect(p.codigo).toBe('gratuito');
+    await expect(como(20, () => rpc('cabenna_resumo_master'))).rejects.toThrow('SEM_PERMISSAO');
   });
 });

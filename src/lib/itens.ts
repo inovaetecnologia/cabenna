@@ -7,6 +7,12 @@ export type DocumentoJSON = {
   marks?: { type: string; attrs?: Record<string, unknown> }[];
 };
 export type DadosItem = {
+  objetivo?: {
+    resultado: string;
+    data_alvo: string | null;
+    situacao: 'ativo' | 'pausado' | 'concluido';
+  };
+  objetivo_id?: string | null;
   prioridade?: number;
   etiquetas?: string[];
   meu_dia?: string | null;
@@ -113,7 +119,7 @@ export function buscar(itens: Item[], busca: string) {
   return itens.filter((i) =>
     termos.every((t) =>
       normalizarBusca(
-        `${i.titulo} ${i.texto} ${(i.dados?.etiquetas ?? []).join(' ')} ${i.checklist.map((l) => l.texto).join(' ')}`,
+        `${i.titulo} ${i.texto} ${i.dados?.objetivo?.resultado ?? ''} ${(i.dados?.etiquetas ?? []).join(' ')} ${i.checklist.map((l) => l.texto).join(' ')}`,
       ).includes(t),
     ),
   );

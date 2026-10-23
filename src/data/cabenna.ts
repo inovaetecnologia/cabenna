@@ -178,3 +178,8 @@ export const carregarPermissoes = (espaco: string) =>
   resultado<{ usuario_id: string; pode_editar: boolean }[]>(
     supabase!.from('permissoes_espaco').select('usuario_id,pode_editar').eq('espaco_id', espaco),
   );
+
+export const resumoMaster = () =>
+  rpc<{ contas: number; equipes: number; registros: number; masters: number }>(
+    'cabenna_resumo_master',
+  );

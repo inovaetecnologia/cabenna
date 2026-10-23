@@ -19,6 +19,36 @@ export default function Planos({
 }) {
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  if (plano?.licenca_permanente)
+    return (
+      <View style={{ gap: 20 }}>
+        <Texto titulo style={{ fontSize: 30, lineHeight: 40, color: cores.texto }}>
+          {plano.master ? 'Master Inovae' : 'Equipes com licença permanente'}
+        </Texto>
+        <Texto style={{ fontSize: 14, lineHeight: 25, color: cores.secundario }}>
+          Sua licença é permanente, sem término de teste ou renovação. A capacidade acompanha o
+          catálogo configurado no servidor.
+        </Texto>
+        <View style={{ padding: 23, borderRadius: 16, backgroundColor: cores.suave, gap: 12 }}>
+          <Texto style={{ color: cores.texto }}>✓ Histórico de {plano.historico_dias} dias</Texto>
+          <Texto style={{ color: cores.texto }}>
+            ✓ Capacidade de conteúdo: {(plano.armazenamento_bytes / 1024 / 1024 / 1024).toFixed(0)}{' '}
+            GB
+          </Texto>
+          <Texto style={{ color: cores.texto }}>✓ Planos, documentos, tarefas e calendário</Texto>
+          <Texto style={{ color: cores.texto }}>
+            ✓ Recursos de equipe com permissões por contexto
+          </Texto>
+        </View>
+        <Botao cores={cores} onPress={criarEquipe}>
+          Criar uma equipe
+        </Botao>
+        <Texto style={{ fontSize: 12, color: cores.secundario }}>
+          A licença libera os recursos disponíveis. Anexos, cofre e contratação paga continuam em
+          preparação.
+        </Texto>
+      </View>
+    );
   return (
     <View style={{ gap: 24 }}>
       <Texto titulo style={{ fontSize: 30, lineHeight: 40, color: cores.texto }}>
