@@ -1,53 +1,44 @@
 # Estado do desenvolvimento
 
-23 de outubro de 2026. Base: dossiê Cabenna v1 de Luís Felipe Marques, decisões D01 a D74, e guia técnico da Inovae. O produto começa como web responsiva/PWA. Aplicativos nativos ficam para depois. Calendários externos, login social e provedores de IA não fazem parte desta etapa.
+23 de outubro de 2026. Escopo: web responsiva/PWA. Base: dossiê Cabenna v1 e referências oficiais de produto documentadas em ESTUDO_PRODUTO.md.
 
-## Implementado no incremento 1
+## Implementado nesta versão local
 
-- Identidade oficial, temas, tipografias, desktop e menu de celular.
-- Captura como nota por padrão, edição de texto, conversão de tipo preservando texto, favoritos.
-- Tarefas com título, descrição, prazo opcional e quatro estados; lista e quadro usam os mesmos registros.
-- Listas com itens marcáveis, inclusão, edição e remoção de itens.
-- Meu dia com contagens derivadas dos registros, foco de hoje/atrasos/favoritos, notas recentes.
-- Busca sem acentos em títulos, conteúdo e itens da lista; arquivo e lixeira excluídos da busca geral.
-- Arquivo, exclusão lógica, restauração sem prazo automático nesta etapa.
-- Avaliação local persistente separada da conta, com exemplos identificados e limpeza com confirmação.
-- Cliente Supabase e formulário de acesso por e-mail/senha; cadastro, recuperação e troca de senha.
-- Migração pessoal com RLS, SELECT por proprietário e escrita apenas via funções com proprietário explícito. Versão esperada em cada escrita impede perda silenciosa de atualização concorrente.
-- Infraestrutura inicial de build, manifesto PWA, cabeçalhos Vercel, CI e conferência de segredos no build.
+- Acesso obrigatório por e-mail e senha: cadastro, confirmação, entrada, recuperação e saída. Sessão verificada com getUser; sem sessão validada não se monta a área de dados. Conta sem e-mail confirmado não entra.
+- Site institucional comercial: proposta de valor, demonstração ilustrativa, Free/Pro/Equipes, chamadas para criar conta e FAQ. Sem preços hipotéticos ou depoimentos inventados.
+- Cinco tipos de registro: nota, documento, tarefa, lista e evento. Conversão de tipo preserva texto e passos. Espaços, etiquetas, busca sem acentos, favoritos, arquivo e exclusão lógica com restauração.
+- Documentos web com Tiptap: títulos, negrito, itálico, listas, checklist, tabela, citação, links e desfazer/refazer. Modelos de reunião, projeto, estudos, planejamento, diário, viagem e mercado. No nativo, apenas edição simples de texto; esta entrega é web.
+- Salvamento automático com estado visível, versão esperada e proteção para alterações pendentes. Falha não transforma conteúdo em "salvo". Não existe fila offline persistente; fechar o navegador sem confirmação de salvamento pode perder rascunho.
+- Meu Dia individual por usuário e registro, inclusive em equipes. Prazo, foco de hoje e bloco de execução são separados. Sugestões por prioridade, sem IA.
+- Tarefas com estados, prioridade, responsável, passos e recorrência diária, semanal, mensal ou no dia seguinte à conclusão. Próxima ocorrência criada no servidor, sem duplicar ao reabrir e concluir. Intenção de dia mensal preservada.
+- Agenda interna com dia/semana/mês, prazos, blocos de tarefas e eventos. Eventos de dia inteiro usam datas; eventos com horário usam instantes e fuso. Validação de horários ambíguos/inexistentes por mudança de horário de verão. Seletores nativos de data e horário no navegador, com validação de fuso.
+- Equipes com até 15 participantes incluindo proprietário. Proprietário, administrador, membro e convidado restrito. Convites por link com token armazenado como hash, e-mail confirmado correspondente, expiração e revogação. Convites pendentes reservam vagas. O app não envia e-mail de convite automaticamente.
+- Espaços abertos/restritos e concessões de leitura/edição. Administradores e proprietário também precisam de concessão explícita nos restritos. Gestão mostra concessões atuais. Atribuição exige que a pessoa tenha acesso ao destino.
+- Remoção de participante revoga o acesso no banco, preserva material da equipe, retira atribuições e gera histórico. Troca de papel e transferência de propriedade exigem regras do servidor. Equipe não fica sem proprietário.
+- Comentários e versões com as permissões do registro. Restauração cria nova versão, sem recuperar permissões históricas. Histórico visível: sete dias no Free, 90 no Pro/Equipes.
+- Exportação de registro e contexto em JSON, Markdown e CSV. CSV protege fórmulas. JSON preserva documento estruturado. Exportação global de equipe exige proprietário e respeita espaços visíveis; comentários e permissões não são exportados. Importação não está implementada.
+- Catálogo e cotas no servidor; teste Pro de 14 dias uma vez por conta; teste Equipes de 14 dias por nova equipe. Sem cartão e sem cobrança automática. Expiração pessoal volta ao Free; equipe fica em consulta. Não há ativação paga pelo cliente.
 
-## Validação local
+## Banco e implantação
 
-TypeScript aprovado e 17 testes aprovados (7 de domínio e 10 de PostgreSQL). A migração foi executada em PostgreSQL PGlite com papéis anon/authenticated e duas contas simuladas. Esses testes não equivalem à validação no Supabase hospedado.
+Migrações novas 0002, 0003, 0004 e 0005 estão locais, testadas em PostgreSQL/PGlite e ainda não executadas no Supabase hospedado por este agente. A migração 0001 foi preservada. Leia ATUALIZACAO.md antes de publicar o app novo. A chave publicável não concede administração do banco.
 
-No navegador: criação de nota, recarga com persistência, busca sem acentos, conclusão com atualização de contagens, exclusão lógica e restauração. Conferência visual em desktop e 390 px; tema escuro conferido na etapa de QA. Repetir fluxos de autenticação, confirmação de e-mail e recuperação depois de configurar Supabase e SMTP.
+A migração 0002 copia itens_pessoais para registros e retira a escrita pelas funções antigas para evitar duas fontes divergentes. Registros antigos continuam preservados na tabela original; a versão anterior do cliente deve ser substituída. Migração é executada uma vez, em ordem. Reverter só o código do cliente antigo não restaura a arquitetura anterior.
 
-## Pendências por incremento
+A autorização é feita pelo banco por chamada. O cliente atualiza listas a cada 20 segundos e ao voltar à janela; uma remoção pode permanecer visualmente no cache até essa atualização, mas novas operações já são bloqueadas. Não há edição colaborativa simultânea nem canais Realtime.
 
-2. Espaços, pastas, etiquetas, documentos ricos, modelos, anexos e histórico. Nota atual é texto simples e grava manualmente; não representa o editor de documentos do escopo.
-3. Subtarefas, ações em lote, recorrência, agenda interna, blocos de tempo e fusos.
-4. Equipes, espaços restritos, convite/aceite transacional até 15 pessoas, compartilhamento de listas, comentários, menções, notificações e líder. Aplicar autorização antes de busca/exportação/canais.
-5. Cofre pessoal: definir bibliotecas, derivação e gestão de chaves, recuperação e exportação criptografada. Bloqueio e revisão específicos. Não guardar segredos em itens_pessoais.
-6. Offline de notas/listas pessoais para contas, fila persistente por usuário e conciliação de conflitos. Documentos compartilhados/equipe/cofre ficam online. Importação/exportação, lixeira e retenção comerciais.
-7. Planos configuráveis, cobrança Asaas em sandbox, administração, suporte autorizado, monitoramento de erros, backups e restauração real. Preços do dossiê continuam hipóteses e não foram publicados.
+## Validação
 
-## Infraestrutura aguardando configuração
+45 testes aprovados: domínio, fusos, portabilidade e PostgreSQL/PGlite. Incluem isolamento pessoal, espaços restritos, read-only, convites vinculados ao e-mail, limite de vagas, proteção de plano, expiração, remoção de membro, exportação, histórico e recorrência. TypeScript e build web aprovados pelo comando npm run check. Esses testes não substituem a validação com contas reais no Supabase hospedado.
 
-- Código-base versionado no commit 4253828 (V 1.0). As alterações do institucional desta etapa estão locais, sem commit ou push feito pelo agente.
-- URL correta confirmada pelo responsável: https://lgejykmmfybfwzqjgpqq.supabase.co. URL e chave publicável configuradas no .env local, ignorado pelo Git. Teste remoto de autenticação respondeu HTTP 200, com e-mail e cadastro habilitados. A tabela itens_pessoais respondeu HTTP 401 / 42501 ao acesso anônimo, indicando que existe e bloqueia leitura sem sessão. Ainda falta validar CRUD e funções com contas autenticadas, confirmação de e-mail e recuperação; a existência da tabela não comprova toda a migração.
-- Vercel informada, configuração de build versionada; nenhum deploy efetuado.
-- SMTP, ambientes isolados, política de retenção e monitoramento ainda não configurados.
+Conferência no navegador do site e tela de acesso em desktop e 390 px. Fluxos autenticados completos precisam ser homologados depois das migrações, com duas contas e confirmação de e-mail funcionando. Tema escuro da área autenticada está implementado, mas ainda precisa dessa conferência com sessão real.
 
-## Dependências e segurança
+## Pendências reais
 
-O SDK 57 foi escolhido para seguir o padrão técnico recebido (React 19 e RN 0.86). A auditoria npm de instalação apresenta alertas transitivos em braces/micromatch/Metro, node-forge e decode-uri-component/query-string. `npm audit fix` sem força foi executado; alertas ainda presentes dependem de atualização upstream ou migração de SDK e devem ser reavaliados antes de produção. Não foi aplicada sugestão automática de rebaixar Expo para 44. Esses avisos não substituem a revisão de segurança antes da liberação comercial.
-
-CSP inicial permite scripts inline requeridos pela saída Expo e conexão ao Supabase. Revisar com URLs definitivas e hashes/nonces antes da produção. A política de microfone será ajustada quando gravação de áudio for implementada. Sessão do Supabase segue o mecanismo de armazenamento da plataforma; dados de conteúdo da conta não ficam na store persistida de avaliação.
-
-## Site institucional
-
-Página de apresentação criada a partir da estrutura observada em https://www.catmoneyapp.com.br/, com identidade própria da Cabenna. Fontes Manrope e Inter hospedadas localmente, logos oficiais, apresentação do produto, demonstração interativa com abas e checklists, explicação dos recursos atuais, proposta de equipes, planos previstos, FAQ e contato institucional. Não anuncia preços nem recursos futuros como liberados.
-
-Rotas: `/` é o institucional estático e `/app` é o aplicativo. `/app?conta=entrar` abre o login. O pós-build preserva o HTML Expo em `dist/app/index.html`; as rewrites da Vercel atendem as rotas do app. Os links de autenticação novos retornam para `/app`; encaminhamento de tokens/códigos na raiz preserva compatibilidade com links anteriores. Configurar URLs permitidas no Supabase com `/app`. A página tem metadados de compartilhamento, favicon, fontes locais e navegação sem depender do bundle do app; o aplicativo tem noindex.
-
-Validação: checagem de tipos, 17 testes e build; HTTP 200 para raiz, aplicativo e arquivos CSS/JS. Login aberto pelo botão do site. Demonstração de tarefas atualiza a contagem; abas e FAQ são operáveis por teclado. Conferência visual e navegação em desktop e celular. A aplicação em nuvem e o SMTP continuam sujeitos à validação de contas reais já listada acima.
+- Aplicar migrações e homologar cadastro, confirmação, recuperação, CRUD, colaboração e e-mails no Supabase real.
+- Contratação paga, Asaas, webhooks idempotentes, administração comercial e preços aprovados. Pro/Equipes nesta entrega funcionam por testes; não por compra.
+- Anexos/Storage, importação, pastas hierárquicas e filtros inteligentes salvos. Cotas atuais são de conteúdo textual/JSON; não incluem armazenamento de arquivos nem cálculo físico das versões do banco.
+- Cofre com revisão específica de criptografia e gestão de chaves; não guardar segredos em notas como substituto.
+- Offline persistente e conciliação, notificações, menções, alarmes, calendário externo e relacionamentos entre registros.
+- Rodada de usabilidade da agenda e do editor; painel de liderança mais completo, operações em lote, gerenciamento de encerramento de equipe.
+- Backups e restauração hospedados, SMTP de produção, monitoramento e revisão de dependências. Nenhum push/deploy foi realizado pelo agente nesta etapa.

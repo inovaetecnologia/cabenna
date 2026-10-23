@@ -1,4 +1,29 @@
-export type Tipo = 'nota' | 'tarefa' | 'lista';
+export type Tipo = 'nota' | 'documento' | 'tarefa' | 'lista' | 'evento';
+export type DocumentoJSON = {
+  type: string;
+  text?: string;
+  attrs?: Record<string, unknown>;
+  content?: DocumentoJSON[];
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
+};
+export type DadosItem = {
+  prioridade?: number;
+  etiquetas?: string[];
+  meu_dia?: string | null;
+  responsavel_id?: string | null;
+  documento?: DocumentoJSON | null;
+  recorrencia?: 'nenhuma' | 'diaria' | 'semanal' | 'mensal' | 'apos_concluir';
+  fuso?: string;
+  inicio?: string | null;
+  fim?: string | null;
+  dia_inteiro?: boolean;
+  data_inicio?: string | null;
+  data_fim?: string | null;
+  bloco_inicio?: string | null;
+  bloco_fim?: string | null;
+  local?: string;
+  link?: string;
+};
 export type Estado = 'A fazer' | 'Em andamento' | 'Aguardando' | 'Concluída';
 export type Linha = { id: string; texto: string; feita: boolean };
 export type Item = {
@@ -15,11 +40,15 @@ export type Item = {
   criado_em: string;
   atualizado_em: string;
   versao: number;
+  espaco_id?: string | null;
+  equipe_id?: string | null;
+  usuario_id?: string | null;
+  dados?: DadosItem;
 };
 export type Entrada = Pick<
   Item,
   'tipo' | 'titulo' | 'texto' | 'prazo' | 'estado' | 'checklist' | 'favorito'
->;
+> & { espaco_id?: string | null; dados?: DadosItem };
 export function dataLocal(data = new Date()): string {
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
 }
@@ -48,6 +77,18 @@ export function validarEntrada(entrada: Entrada): Entrada {
     throw new Error('Confira os itens da lista (até 300 itens de 500 caracteres).');
   if (new Set(entrada.checklist.map((l) => l.id)).size !== entrada.checklist.length)
     throw new Error('Há itens repetidos na lista.');
+  if (
+    (entrada.dados?.etiquetas?.length ?? 0) > 20 ||
+    entrada.dados?.etiquetas?.some((e) => !e.trim() || e.length > 40)
+  )
+    throw new Error('Use até 20 etiquetas de até 40 caracteres.');
+  if (
+    entrada.tipo === 'tarefa' &&
+    entrada.dados?.recorrencia &&
+    !['nenhuma', 'apos_concluir'].includes(entrada.dados.recorrencia) &&
+    !entrada.prazo
+  )
+    throw new Error('Defina um prazo para repetir essa tarefa.');
   return { ...entrada, titulo };
 }
 export function novoItem(id: string, entrada: Entrada, agora = new Date().toISOString()): Item {
@@ -72,7 +113,7 @@ export function buscar(itens: Item[], busca: string) {
   return itens.filter((i) =>
     termos.every((t) =>
       normalizarBusca(
-        `${i.titulo} ${i.texto} ${i.checklist.map((l) => l.texto).join(' ')}`,
+        `${i.titulo} ${i.texto} ${(i.dados?.etiquetas ?? []).join(' ')} ${i.checklist.map((l) => l.texto).join(' ')}`,
       ).includes(t),
     ),
   );
