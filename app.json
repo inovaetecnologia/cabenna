@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Cabenna",
+    "slug": "cabenna",
+    "version": "0.1.0",
+    "scheme": "cabenna",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-router", "expo-font"]
+  }
+}
